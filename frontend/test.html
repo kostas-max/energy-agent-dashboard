@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<title>Energy Agent - Test Page</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f5f5f5;
+}
+.card {
+  background: white;
+  padding: 20px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.success { color: #10b981; }
+.error { color: #ef4444; }
+.loading { color: #6b7280; }
+pre {
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+button {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px;
+}
+button:hover {
+  background: #059669;
+}
+</style>
+</head>
+<body>
+
+<h1>Energy Agent Dashboard - Diagnostic Test</h1>
+
+<div class="card">
+  <h2>Backend Connection Test</h2>
+  <p id="status" class="loading">Testing...</p>
+  <button onclick="runTests()">Run Tests Again</button>
+</div>
+
+<div class="card">
+  <h2>API Endpoints Status</h2>
+  <div id="endpoints"></div>
+</div>
+
+<div class="card">
+  <h2>Data Preview</h2>
+  <div id="dataPreview"></div>
+</div>
+
+<div class="card">
+  <h2>Browser Console Errors</h2>
+  <p>Open browser Developer Tools (F12) and check the Console tab for any errors.</p>
+  <p>Check the Network tab to see if API requests are completing successfully.</p>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+
+async function testEndpoint(url, name) {
+  try {
+    const startTime = performance.now();
+    const response = await fetch(url);
+    const endTime = performance.now();
+    const data = await response.json();
+    const latency = Math.round(endTime - startTime);
+
+    return {
+      name,
+      url,
+      status: response.ok ? 'success' : 'error',
+      statusCode: response.status,
+      latency: `${latency}ms`,
+      data: data
+    };
+  } catch (error) {
+    return {
+      name,
+      url,
+      status: 'error',
+      statusCode: 'N/A',
+      latency: 'N/A',
+      error: error.message
+    };
+  }
+}
+
+async function runTests() {
+  document.getElementById('status').innerHTML = '<span class="loading">Running tests...</span>';
+  document.getElementById('endpoints').innerHTML = '<p class="loading">Testing endpoints...</p>';
+  document.getElementById('dataPreview').innerHTML = '';
+
+  const endpoints = [
+    { url: `${API_BASE}/news`, name: 'News' },
+    { url: `${API_BASE}/saved`, name: 'Saved' },
+    { url: `${API_BASE}/sources`, name: 'Sources' },
+    { url: `${API_BASE}/notes`, name: 'Notes' },
+    { url: `${API_BASE}/api-usage`, name: 'AI Usage' },
+    { url: `${API_BASE}/search/status`, name: 'Search Status' },
+    { url: `${API_BASE}/conversations/analytics`, name: 'Conversations' }
+  ];
+
+  const results = await Promise.all(
+    endpoints.map(ep => testEndpoint(ep.url, ep.name))
+  );
+
+  const allSuccess = results.every(r => r.status === 'success');
+
+  if (allSuccess) {
+    document.getElementById('status').innerHTML =
+      '<span class="success">✓ All tests passed! Backend is working correctly.</span>';
+  } else {
+    document.getElementById('status').innerHTML =
+      '<span class="error">✗ Some tests failed. Check details below.</span>';
+  }
+
+  let endpointsHTML = '<table style="width:100%; border-collapse: collapse;">';
+  endpointsHTML += '<tr style="border-bottom: 2px solid #e5e7eb;"><th style="text-align:left; padding:8px;">Endpoint</th><th>Status</th><th>Code</th><th>Latency</th></tr>';
+
+  results.forEach(result => {
+    const statusClass = result.status === 'success' ? 'success' : 'error';
+    const statusIcon = result.status === 'success' ? '✓' : '✗';
+    endpointsHTML += `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding:8px;">${result.name}</td>
+        <td class="${statusClass}" style="text-align:center;">${statusIcon} ${result.status}</td>
+        <td style="text-align:center;">${result.statusCode}</td>
+        <td style="text-align:center;">${result.latency}</td>
+      </tr>
+    `;
+  });
+  endpointsHTML += '</table>';
+
+  document.getElementById('endpoints').innerHTML = endpointsHTML;
+
+  // Show data preview for news
+  const newsResult = results.find(r => r.name === 'News');
+  if (newsResult && newsResult.data) {
+    const newsCount = newsResult.data.news ? newsResult.data.news.length : 0;
+    const sourcesResult = results.find(r => r.name === 'Sources');
+    const sourcesCount = sourcesResult && sourcesResult.data ? sourcesResult.data.sources.length : 0;
+
+    let previewHTML = `
+      <p><strong>News Items:</strong> ${newsCount}</p>
+      <p><strong>Sources:</strong> ${sourcesCount}</p>
+    `;
+
+    if (newsCount > 0) {
+      const sampleNews = newsResult.data.news[0];
+      previewHTML += `
+        <p><strong>Sample News Item:</strong></p>
+        <pre>${JSON.stringify(sampleNews, null, 2).substring(0, 300)}...</pre>
+      `;
+    }
+
+    document.getElementById('dataPreview').innerHTML = previewHTML;
+  }
+}
+
+// Run tests on page load
+document.addEventListener('DOMContentLoaded', runTests);
+
+// Log errors to page
+window.addEventListener('error', (event) => {
+  console.error('Page Error:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled Promise Rejection:', event.reason);
+});
+</script>
+
+</body>
+</html>

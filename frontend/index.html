@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Agent Dashboard (GR)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --bg-dark: #111827;
+  --bg-gray: #1f2937;
+  --bg-light: #f3f4f6;
+  --card-bg: #ffffff;
+  --text-dark: #111827;
+  --text-gray: #6b7280;
+  --border: #e5e7eb;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: var(--bg-light);
+  color: var(--text-dark);
+  font-size: 12px;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: var(--bg-dark);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-header h1 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.sidebar-header .version {
+  font-size: 9px;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  overflow-y: auto;
+}
+
+.nav-button {
+  width: 100%;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border: none;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.nav-button:hover {
+  background: var(--bg-gray);
+  color: white;
+}
+
+.nav-button.active {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+}
+
+.nav-button i {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.sidebar-footer {
+  padding: 12px 10px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.ai-usage {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 10px;
+}
+
+.ai-usage-label {
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 6px;
+}
+
+.ai-usage-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.ai-usage-fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s;
+}
+
+.ai-usage-text {
+  color: white;
+  font-weight: 600;
+}
+
+/* AI Search Toggle */
+.ai-toggle-container {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 10px;
+  margin-top: 8px;
+}
+
+.ai-toggle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ai-toggle-label {
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.toggle-switch.active {
+  background: #3b82f6;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.toggle-switch.active .toggle-slider {
+  transform: translateX(20px);
+}
+
+.ai-toggle-status {
+  color: rgba(255,255,255,0.5);
+  font-size: 10px;
+  margin-top: 6px;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-light);
+}
+
+.content-header {
+  background: white;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.content-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.content-header p {
+  color: var(--text-gray);
+  font-size: 12px;
+}
+
+.content-body {
+  padding: 24px 32px;
+  max-width: 1400px;
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-dark);
+}
+
+.card-title a {
+  color: var(--text-dark);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.card-title a:hover {
+  color: var(--primary);
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0;
+  font-size: 11px;
+  color: var(--text-gray);
+}
+
+.card-meta i {
+  margin-right: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--primary);
+  color: white;
+}
+
+.card-summary {
+  margin-top: 12px;
+  color: var(--text-gray);
+  line-height: 1.6;
+}
+
+.card-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.btn-secondary {
+  background: var(--bg-gray);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #374151;
+}
+
+.btn-small {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.btn-icon {
+  padding: 10px;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-gray);
+}
+
+.loading i {
+  font-size: 26px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-gray);
+}
+
+.empty-state i {
+  font-size: 38px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-state h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+}
+
+/* Reply Box */
+.reply-box {
+  background: #f0fdf4;
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.reply-box-label {
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.reply-box-content {
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+/* Search & Filter */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.search-box i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-gray);
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 8px 14px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .content-body {
+    padding: 16px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text-gray);
+}
+
+/* Source List */
+.source-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.source-info {
+  flex: 1;
+}
+
+.source-url {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.source-type {
+  font-size: 10px;
+  color: var(--text-gray);
+}
+
+/* Notes UI */
+.notes-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.notes-filters {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  min-width: 150px;
+}
+
+.note-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s;
+}
+
+.note-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.note-card.pinned {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.note-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+  flex: 1;
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.note-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-gray);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.note-action-btn:hover {
+  background: var(--bg-light);
+  color: var(--primary);
+}
+
+.note-action-btn.pinned {
+  color: #fbbf24;
+}
+
+.note-content {
+  color: var(--text-gray);
+  margin-bottom: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.note-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--text-gray);
+}
+
+.note-category {
+  background: var(--primary);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.note-tag {
+  background: var(--bg-light);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.note-date {
+  margin-left: auto;
+}
+
+/* Note Editor Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: var(--text-gray);
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.form-group textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.tags-input-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 42px;
+}
+
+.tag-item {
+  background: var(--primary);
+  color: white;
+  padding: 3px 7px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.tag-remove {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+}
+
+.tags-input {
+  border: none;
+  outline: none;
+  flex: 1;
+  min-width: 100px;
+  font-size: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.modal-actions button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-actions .btn-cancel {
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.modal-actions .btn-cancel:hover {
+  background: var(--border);
+}
+
+.modal-actions .btn-save {
+  background: var(--primary);
+  color: white;
+}
+
+.modal-actions .btn-save:hover {
+  background: var(--primary-dark);
+}
+
+/* Drag & Drop Styles */
+.card.dragging {
+  opacity: 0.5;
+  cursor: move;
+}
+
+.card.drag-over {
+  border: 2px dashed var(--primary);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-gray);
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drop-zone {
+  border: 2px dashed var(--primary);
+  background: rgba(16, 185, 129, 0.05);
+  padding: 20px;
+  text-align: center;
+  color: var(--text-gray);
+  border-radius: 10px;
+  margin: 16px 0;
+  display: none;
+}
+
+.drop-zone.active {
+  display: block;
+}
+
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1><i class="fas fa-bolt"></i> Energy Agent</h1>
+      <div class="version">v1_GR_Stable</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <button class="nav-button active" data-tab="dashboard">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-button" data-tab="news">
+        <i class="fas fa-newspaper"></i>
+        <span>Νέα</span>
+      </button>
+      <button class="nav-button" data-tab="saved">
+        <i class="fas fa-star"></i>
+        <span>Σημαντικά</span>
+      </button>
+      <button class="nav-button" data-tab="prompt">
+        <i class="fas fa-robot"></i>
+        <span>Agent Prompt</span>
+      </button>
+      <button class="nav-button" data-tab="sources">
+        <i class="fas fa-rss"></i>
+        <span>Πηγές</span>
+      </button>
+      <button class="nav-button" data-tab="notes">
+        <i class="fas fa-sticky-note"></i>
+        <span>Σημειώσεις</span>
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="ai-usage">
+        <div class="ai-usage-label"><i class="fas fa-brain"></i> AI Usage Today</div>
+        <div class="ai-usage-bar">
+          <div class="ai-usage-fill" id="aiUsageFill" style="width: 0%"></div>
+        </div>
+        <div class="ai-usage-text" id="aiUsageText">Φόρτωση...</div>
+      </div>
+
+      <div class="ai-toggle-container">
+        <div class="ai-toggle-header">
+          <div class="ai-toggle-label">
+            <i class="fas fa-magic"></i>
+            AI Search
+          </div>
+          <div class="toggle-switch" id="aiSearchToggle">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+        <div class="ai-toggle-status" id="aiSearchStatus">Φόρτωση...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="content-header">
+      <h2 id="pageTitle">Dashboard</h2>
+      <p id="pageSubtitle">Επισκόπηση ενεργειακών ειδήσεων και προγραμμάτων</p>
+    </div>
+
+    <div class="content-body" id="content">
+      <!-- Content loaded dynamically -->
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000';
+let currentTab = 'dashboard';
+let newsData = [];
+let savedData = [];
+let sourcesData = [];
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  initNavigation();
+  loadTab('dashboard');
+  loadAIUsage();
+  initAISearchToggle();
+
+  // Refresh AI usage every 30 seconds
+  setInterval(loadAIUsage, 30000);
+});
+
+// Navigation
+function initNavigation() {
+  document.querySelectorAll('.nav-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadTab(tab);
+    });
+  });
+}
+
+async function loadTab(tab) {
+  currentTab = tab;
+  const content = document.getElementById('content');
+
+  const titles = {
+    dashboard: { title: 'Dashboard', subtitle: 'Επισκόπηση ενεργειακών ειδήσεων και προγραμμάτων' },
+    news: { title: 'Νέα', subtitle: 'Όλα τα πρόσφατα άρθρα από τις πηγές σας' },
+    saved: { title: 'Σημαντικά', subtitle: 'Άρθρα που έχετε σημειώσει ως σημαντικά' },
+    prompt: { title: 'Agent Prompt', subtitle: 'Δώστε εντολές στον Energy Agent' },
+    sources: { title: 'Πηγές', subtitle: 'Διαχείριση πηγών ειδήσεων' },
+    notes: { title: 'Σημειώσεις', subtitle: 'Το σημειωματάριό σας' }
+  };
+
+  document.getElementById('pageTitle').textContent = titles[tab].title;
+  document.getElementById('pageSubtitle').textContent = titles[tab].subtitle;
+
+  content.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Φόρτωση...</p></div>';
+
+  try {
+    switch(tab) {
+      case 'dashboard':
+        await loadDashboard();
+        break;
+      case 'news':
+        await loadNews();
+        break;
+      case 'saved':
+        await loadSaved();
+        break;
+      case 'prompt':
+        loadPromptUI();
+        break;
+      case 'sources':
+        await loadSources();
+        break;
+      case 'notes':
+        await loadNotes();
+        break;
+    }
+  } catch (error) {
+    content.innerHTML = `<div class="empty-state">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Σφάλμα Φόρτωσης</h3>
+      <p>${error.message}</p>
+    </div>`;
+  }
+}
+
+// Dashboard
+async function loadDashboard() {
+  const [newsRes, savedRes, sourcesRes] = await Promise.all([
+    fetch(`${API_BASE}/news`),
+    fetch(`${API_BASE}/saved`),
+    fetch(`${API_BASE}/sources`)
+  ]);
+
+  const newsData = await newsRes.json();
+  const savedData = await savedRes.json();
+  const sourcesData = await sourcesRes.json();
+
+  const news = newsData.news || [];
+  const saved = savedData.news || [];
+  const sources = sourcesData.sources || [];
+
+  // Count by topic
+  const topicCounts = {};
+  news.forEach(item => {
+    const topic = item.topic || 'Άλλο';
+    topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+  });
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">${news.length}</div>
+        <div class="stat-label"><i class="fas fa-newspaper"></i> Σύνολο Νέων</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${saved.length}</div>
+        <div class="stat-label"><i class="fas fa-star"></i> Σημαντικά</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${sources.length}</div>
+        <div class="stat-label"><i class="fas fa-rss"></i> Ενεργές Πηγές</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${Object.keys(topicCounts).length}</div>
+        <div class="stat-label"><i class="fas fa-tags"></i> Κατηγορίες</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 16px;"><i class="fas fa-clock"></i> Πρόσφατα Άρθρα</h3>
+      ${news.slice(0, 5).map(item => renderNewsCard(item)).join('')}
+      ${news.length > 5 ? '<button class="btn btn-primary" onclick="loadTab(\'news\')">Προβολή Όλων</button>' : ''}
+    </div>
+  `;
+}
+
+// News
+async function loadNews() {
+  const res = await fetch(`${API_BASE}/news`);
+  const data = await res.json();
+  newsData = data.news || [];
+
+  renderNewsList(newsData);
+}
+
+// Saved
+async function loadSaved() {
+  const res = await fetch(`${API_BASE}/saved`);
+  const data = await res.json();
+  savedData = data.news || [];
+
+  const content = document.getElementById('content');
+  if (savedData.length === 0) {
+    content.innerHTML = `<div class="empty-state">
+      <i class="fas fa-star"></i>
+      <h3>Δεν υπάρχουν σημαντικά άρθρα</h3>
+      <p>Χρησιμοποιήστε την εντολή "σημαντικό &lt;link&gt;" για να προσθέσετε.</p>
+    </div>`;
+    return;
+  }
+
+  renderNewsList(savedData);
+}
+
+// Render news list
+function renderNewsList(items) {
+  const content = document.getElementById('content');
+
+  if (items.length === 0) {
+    content.innerHTML = `<div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <h3>Δεν υπάρχουν άρθρα</h3>
+      <p>Προσθέστε πηγές ή εκτελέστε αναζήτηση.</p>
+    </div>`;
+    return;
+  }
+
+  // Get unique topics
+  const topics = ['Όλα', ...new Set(items.map(i => i.topic).filter(Boolean))];
+
+  content.innerHTML = `
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Αναζήτηση στα άρθρα..." oninput="filterNews()">
+      </div>
+      <div class="filter-group">
+        ${topics.map(t => `
+          <button class="filter-btn ${t === 'Όλα' ? 'active' : ''}" onclick="filterByTopic('${t}')">${t}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div id="newsList">${items.map(item => renderNewsCard(item)).join('')}</div>
+  `;
+}
+
+function renderNewsCard(item) {
+  const newsData = JSON.stringify(item).replace(/"/g, '&quot;');
+  return `
+    <div class="card"
+         data-news='${newsData}'
+         data-title="${item.title.toLowerCase()}"
+         data-topic="${item.topic || ''}">
+      <div class="card-title">
+        <a href="${item.url}" target="_blank">${item.title}</a>
+      </div>
+      <div class="card-meta">
+        <span><i class="far fa-clock"></i> ${formatDate(item.date)}</span>
+        ${item.topic ? `<span class="badge">${item.topic}</span>` : ''}
+        ${item.saved ? '<span><i class="fas fa-star" style="color: gold;"></i> Σημαντικό</span>' : ''}
+      </div>
+      ${item.summary ? `<div class="card-summary">${item.summary}</div>` : ''}
+      <div class="card-actions">
+        <button class="btn btn-small" onclick='addNewsToNotes(${newsData})'>
+          <i class="fas fa-plus"></i> Προσθήκη στις Σημειώσεις
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function filterNews() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const cards = document.querySelectorAll('#newsList .card');
+
+  cards.forEach(card => {
+    const title = card.dataset.title;
+    card.style.display = title.includes(query) ? 'block' : 'none';
+  });
+}
+
+function filterByTopic(topic) {
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const cards = document.querySelectorAll('#newsList .card');
+  cards.forEach(card => {
+    if (topic === 'Όλα' || card.dataset.topic === topic) {
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// Prompt UI
+function loadPromptUI() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <!-- Analytics Dashboard -->
+    <div class="card">
+      <h3 style="margin-bottom: 16px;"><i class="fas fa-chart-line"></i> AI Analytics</h3>
+      <div id="analyticsContainer">
+        <div class="loading"><i class="fas fa-spinner"></i><p>Φόρτωση αναλυτικών...</p></div>
+      </div>
+    </div>
+
+    <!-- Conversation History -->
+    <div class="card">
+      <h3 style="margin-bottom: 16px;"><i class="fas fa-history"></i> Ιστορικό Συζητήσεων</h3>
+      <div id="conversationHistory">
+        <div class="loading"><i class="fas fa-spinner"></i><p>Φόρτωση ιστορικού...</p></div>
+      </div>
+    </div>
+
+    <!-- Prompt Input -->
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-robot"></i> Εντολή προς Agent</label>
+        <textarea class="form-textarea" id="promptInput" placeholder="Παραδείγματα:
+• ψάξε φωτοβολταϊκά
+• πρόσθεσε πηγή https://example.com/feed
+• δείξε τις πηγές
+• φτιάξε φάκελο Αντλίες
+• βάλε στο ημερολόγιο 15/11/2025
+• βοήθεια"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="sendPrompt()">
+        <i class="fas fa-paper-plane"></i> Αποστολή
+      </button>
+    </div>
+
+    <div id="replyContainer"></div>
+
+    <!-- Manual Scraping Controls -->
+    <div class="card" style="margin-top: 24px;">
+      <h3 style="margin-bottom: 12px;"><i class="fas fa-cog"></i> Ρυθμίσεις & Εργαλεία</h3>
+
+      <!-- Smart Scraping Button -->
+      <div style="margin-bottom: 20px;">
+        <button class="btn btn-primary" onclick="smartScrape()" style="margin-right: 12px;">
+          <i class="fas fa-brain"></i> Smart Scraping (AI)
+        </button>
+        <button class="btn btn-secondary" onclick="manualScrape()">
+          <i class="fas fa-sync-alt"></i> Manual Scraping (RSS)
+        </button>
+        <p style="color: var(--text-gray); margin-top: 8px; font-size: 14px;">
+          <i class="fas fa-info-circle"></i> <strong>Smart Scraping:</strong> Ψάχνει στο web με AI για 5 topics (Φωτοβολταϊκά, Αντλίες, Νομοθεσία, Επιδοτήσεις, Μπαταρίες)
+        </p>
+        <p style="color: var(--text-gray); margin-top: 4px; font-size: 14px;">
+          <i class="fas fa-exclamation-triangle"></i> <strong>Κόστος:</strong> ~$0.06 για Smart Scraping, μικρότερο για Manual Scraping
+        </p>
+      </div>
+      <div id="scrapeResult"></div>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <h3 style="margin-bottom: 12px;"><i class="fas fa-info-circle"></i> Διαθέσιμες Εντολές</h3>
+      <ul style="line-height: 2; color: var(--text-gray);">
+        <li><code>ψάξε &lt;όρος&gt;</code> - Αναζήτηση σχετικών αποτελεσμάτων</li>
+        <li><code>πρόσθεσε πηγή &lt;url&gt;</code> - Προσθήκη νέας πηγής</li>
+        <li><code>δείξε τις πηγές</code> - Εμφάνιση όλων των πηγών</li>
+        <li><code>φτιάξε φάκελο &lt;όνομα&gt;</code> - Δημιουργία νέου φακέλου</li>
+        <li><code>βάλε στο ημερολόγιο ΗΗ/ΜΜ/ΕΕΕΕ</code> - Προσθήκη event στο calendar</li>
+        <li><code>σημαντικό &lt;link&gt;</code> - Σημείωση link ως σημαντικό</li>
+        <li><code>βοήθεια</code> - Εμφάνιση βοήθειας</li>
+      </ul>
+    </div>
+  `;
+
+  // Load analytics and history
+  loadAnalytics();
+  loadConversationHistory();
+}
+
+async function sendPrompt() {
+  const input = document.getElementById('promptInput');
+  const prompt = input.value.trim();
+
+  if (!prompt) {
+    alert('Παρακαλώ εισάγετε μια εντολή');
+    return;
+  }
+
+  const replyContainer = document.getElementById('replyContainer');
+  replyContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Επεξεργασία...</p></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/prompt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    const data = await res.json();
+
+    replyContainer.innerHTML = `
+      <div class="reply-box">
+        <span class="reply-box-label"><i class="fas fa-robot"></i> Απάντηση Agent</span>
+        <div class="reply-box-content">${data.reply}</div>
+      </div>
+    `;
+
+    // Clear input
+    input.value = '';
+  } catch (error) {
+    replyContainer.innerHTML = `<div class="empty-state">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Σφάλμα</h3>
+      <p>${error.message}</p>
+    </div>`;
+  }
+}
+
+// Sources
+async function loadSources() {
+  const res = await fetch(`${API_BASE}/sources`);
+  const data = await res.json();
+  sourcesData = data.sources || [];
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="card">
+      <h3 style="margin-bottom: 16px;"><i class="fas fa-plus-circle"></i> Προσθήκη Νέας Πηγής</h3>
+      <div class="form-group">
+        <label class="form-label">URL Πηγής</label>
+        <input type="url" class="form-input" id="newSourceUrl" placeholder="https://example.com/feed">
+      </div>
+      <button class="btn btn-primary" onclick="addSource()">
+        <i class="fas fa-plus"></i> Προσθήκη
+      </button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 16px;"><i class="fas fa-list"></i> Υπάρχουσες Πηγές (${sourcesData.length})</h3>
+      ${sourcesData.length === 0 ?
+        '<p style="color: var(--text-gray);">Δεν υπάρχουν πηγές. Προσθέστε μία παραπάνω.</p>' :
+        sourcesData.map(s => `
+          <div class="source-item">
+            <div class="source-info">
+              <div class="source-url">${s.url}</div>
+              <div class="source-type"><i class="fas fa-tag"></i> ${s.type || 'Unknown'}</div>
+            </div>
+            <button class="btn btn-secondary btn-small" onclick="removeSource('${s.url}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+}
+
+async function addSource() {
+  const input = document.getElementById('newSourceUrl');
+  const url = input.value.trim();
+
+  if (!url) {
+    alert('Παρακαλώ εισάγετε ένα URL');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/sources/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+
+    const data = await res.json();
+    alert(data.result);
+
+    // Reload sources
+    await loadSources();
+  } catch (error) {
+    alert('Σφάλμα: ' + error.message);
+  }
+}
+
+async function removeSource(url) {
+  if (!confirm('Είστε σίγουροι ότι θέλετε να αφαιρέσετε αυτή την πηγή;')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/sources/remove`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+
+    const data = await res.json();
+    alert(data.result);
+
+    // Reload sources
+    await loadSources();
+  } catch (error) {
+    alert('Σφάλμα: ' + error.message);
+  }
+}
+
+// AI Usage
+async function loadAIUsage() {
+  try {
+    const res = await fetch(`${API_BASE}/api-usage`);
+    const data = await res.json();
+
+    const percentage = (data.used_minutes / data.max_daily_minutes) * 100;
+
+    document.getElementById('aiUsageFill').style.width = `${Math.min(percentage, 100)}%`;
+    document.getElementById('aiUsageText').textContent =
+      `${data.used_minutes.toFixed(1)} / ${data.max_daily_minutes} λεπτά`;
+  } catch (error) {
+    console.error('Failed to load AI usage:', error);
+    document.getElementById('aiUsageText').textContent = 'N/A';
+  }
+}
+
+// AI Search Toggle
+async function initAISearchToggle() {
+  const toggle = document.getElementById('aiSearchToggle');
+  const status = document.getElementById('aiSearchStatus');
+
+  try {
+    // Load current status
+    const res = await fetch(`${API_BASE}/search/status`);
+    const data = await res.json();
+
+    if (data.enabled) {
+      toggle.classList.add('active');
+      status.textContent = 'Ενεργό';
+    } else {
+      status.textContent = 'Ανενεργό';
+    }
+  } catch (error) {
+    console.error('Failed to load AI search status:', error);
+    status.textContent = 'Σφάλμα';
+  }
+
+  // Toggle click handler
+  toggle.addEventListener('click', async () => {
+    const isActive = toggle.classList.contains('active');
+    const newState = !isActive;
+
+    try {
+      status.textContent = 'Ενημέρωση...';
+
+      // Call backend to update .env
+      const res = await fetch(`${API_BASE}/search/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: newState })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        if (newState) {
+          toggle.classList.add('active');
+          status.textContent = 'Ενεργό';
+        } else {
+          toggle.classList.remove('active');
+          status.textContent = 'Ανενεργό';
+        }
+
+        // Show success message
+        alert(data.message || 'Η ρύθμιση ενημερώθηκε επιτυχώς!');
+      } else {
+        status.textContent = 'Σφάλμα';
+        alert('Σφάλμα: ' + (data.error || 'Αποτυχία ενημέρωσης'));
+      }
+    } catch (error) {
+      console.error('Failed to toggle AI search:', error);
+      status.textContent = 'Σφάλμα';
+      alert('Σφάλμα κατά την ενημέρωση: ' + error.message);
+    }
+  });
+}
+
+// Notes System
+let currentNoteFilter = { category: null, tag: null, pinned: false };
+let allNotes = [];
+let allCategories = [];
+let allTags = [];
+let editingNoteId = null;
+
+async function loadNotes() {
+  const content = document.getElementById('content');
+
+  try {
+    // Fetch notes data
+    const [notesRes, categoriesRes, tagsRes] = await Promise.all([
+      fetch(`${API_BASE}/notes`),
+      fetch(`${API_BASE}/notes/categories`),
+      fetch(`${API_BASE}/notes/tags`)
+    ]);
+
+    const notesData = await notesRes.json();
+    const categoriesData = await categoriesRes.json();
+    const tagsData = await tagsRes.json();
+
+    allNotes = notesData.notes || [];
+    allCategories = categoriesData.categories || [];
+    allTags = tagsData.tags || [];
+
+    renderNotesUI();
+  } catch (error) {
+    content.innerHTML = `<div class="empty-state">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Σφάλμα</h3>
+      <p>Δεν ήταν δυνατή η φόρτωση των σημειώσεων</p>
+    </div>`;
+  }
+}
+
+function renderNotesUI() {
+  const content = document.getElementById('content');
+
+  // Filter notes
+  let filteredNotes = allNotes;
+  if (currentNoteFilter.category) {
+    filteredNotes = filteredNotes.filter(n => n.category === currentNoteFilter.category);
+  }
+  if (currentNoteFilter.tag) {
+    filteredNotes = filteredNotes.filter(n => n.tags.includes(currentNoteFilter.tag));
+  }
+  if (currentNoteFilter.pinned) {
+    filteredNotes = filteredNotes.filter(n => n.pinned);
+  }
+
+  const notesHTML = filteredNotes.length > 0
+    ? filteredNotes.map(note => `
+        <div class="note-card ${note.pinned ? 'pinned' : ''}">
+          <div class="note-header">
+            <div class="note-title">${escapeHtml(note.title)}</div>
+            <div class="note-actions">
+              <button class="note-action-btn ${note.pinned ? 'pinned' : ''}" onclick="togglePinNote(${note.id})" title="${note.pinned ? 'Ξεκαρφίτσωμα' : 'Καρφίτσωμα'}">
+                <i class="fas fa-thumbtack"></i>
+              </button>
+              <button class="note-action-btn" onclick="editNote(${note.id})" title="Επεξεργασία">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="note-action-btn" onclick="deleteNote(${note.id})" title="Διαγραφή">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          ${note.content ? `<div class="note-content">${escapeHtml(note.content)}</div>` : ''}
+          <div class="note-meta">
+            ${note.category ? `<span class="note-category">${escapeHtml(note.category)}</span>` : ''}
+            ${note.tags.map(tag => `<span class="note-tag">#${escapeHtml(tag)}</span>`).join('')}
+            <span class="note-date">${formatDate(note.updated_at)}</span>
+          </div>
+        </div>
+      `).join('')
+    : `<div class="empty-state">
+        <i class="fas fa-sticky-note"></i>
+        <h3>Δεν υπάρχουν σημειώσεις</h3>
+        <p>Δημιούργησε τη πρώτη σου σημείωση!</p>
+      </div>`;
+
+  content.innerHTML = `
+    <div class="notes-toolbar">
+      <div class="notes-filters">
+        <select class="filter-select" id="categoryFilter" onchange="filterNotes()">
+          <option value="">Όλες οι κατηγορίες</option>
+          ${allCategories.map(cat => `<option value="${cat}" ${currentNoteFilter.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+        </select>
+        <select class="filter-select" id="tagFilter" onchange="filterNotes()">
+          <option value="">Όλα τα tags</option>
+          ${allTags.map(tag => `<option value="${tag}" ${currentNoteFilter.tag === tag ? 'selected' : ''}>#${tag}</option>`).join('')}
+        </select>
+        <label style="display: flex; align-items: center; gap: 8px; padding: 8px;">
+          <input type="checkbox" id="pinnedFilter" ${currentNoteFilter.pinned ? 'checked' : ''} onchange="filterNotes()" />
+          <span>Μόνο καρφιτσωμένα</span>
+        </label>
+      </div>
+      <button class="btn btn-primary" onclick="openNoteEditor()">
+        <i class="fas fa-plus"></i> Νέα Σημείωση
+      </button>
+    </div>
+    <div class="notes-list">
+      ${notesHTML}
+    </div>
+  `;
+}
+
+function filterNotes() {
+  const categoryFilter = document.getElementById('categoryFilter');
+  const tagFilter = document.getElementById('tagFilter');
+  const pinnedFilter = document.getElementById('pinnedFilter');
+
+  currentNoteFilter = {
+    category: categoryFilter.value || null,
+    tag: tagFilter.value || null,
+    pinned: pinnedFilter.checked
+  };
+
+  renderNotesUI();
+}
+
+function openNoteEditor(noteId = null) {
+  editingNoteId = noteId;
+  const note = noteId ? allNotes.find(n => n.id === noteId) : null;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'noteEditorModal';
+
+  const currentTags = note ? note.tags : [];
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>${noteId ? 'Επεξεργασία Σημείωσης' : 'Νέα Σημείωση'}</h3>
+        <button class="modal-close" onclick="closeNoteEditor()">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>Τίτλος *</label>
+        <input type="text" id="noteTitle" value="${note ? escapeHtml(note.title) : ''}" placeholder="Τίτλος σημείωσης" />
+      </div>
+      <div class="form-group">
+        <label>Περιεχόμενο</label>
+        <textarea id="noteContent" placeholder="Γράψε τις σκέψεις σου...">${note ? escapeHtml(note.content) : ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Κατηγορία</label>
+        <input type="text" id="noteCategory" value="${note ? escapeHtml(note.category) : ''}" list="categoriesList" placeholder="π.χ. Έργα, Ιδέες" />
+        <datalist id="categoriesList">
+          ${allCategories.map(cat => `<option value="${cat}">`).join('')}
+        </datalist>
+      </div>
+      <div class="form-group">
+        <label>Tags</label>
+        <div class="tags-input-container" id="tagsContainer">
+          ${currentTags.map(tag => `
+            <span class="tag-item">
+              ${escapeHtml(tag)}
+              <button class="tag-remove" onclick="removeTag('${escapeHtml(tag)}')">&times;</button>
+            </span>
+          `).join('')}
+          <input type="text" class="tags-input" id="tagsInput" placeholder="Πρόσθεσε tag..." onkeydown="handleTagInput(event)" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeNoteEditor()">Ακύρωση</button>
+        <button class="btn-save" onclick="saveNote()">Αποθήκευση</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function closeNoteEditor() {
+  const modal = document.getElementById('noteEditorModal');
+  if (modal) {
+    modal.remove();
+  }
+  editingNoteId = null;
+}
+
+function handleTagInput(event) {
+  if (event.key === 'Enter' || event.key === ',') {
+    event.preventDefault();
+    const input = event.target;
+    const tag = input.value.trim().replace(/^#/, '');
+    if (tag) {
+      addTag(tag);
+      input.value = '';
+    }
+  }
+}
+
+function addTag(tag) {
+  const container = document.getElementById('tagsContainer');
+  const input = document.getElementById('tagsInput');
+
+  // Check if tag already exists
+  const existingTags = Array.from(container.querySelectorAll('.tag-item')).map(el => el.textContent.trim().replace('×', ''));
+  if (existingTags.includes(tag)) return;
+
+  const tagEl = document.createElement('span');
+  tagEl.className = 'tag-item';
+  tagEl.innerHTML = `
+    ${escapeHtml(tag)}
+    <button class="tag-remove" onclick="removeTag('${escapeHtml(tag)}')">&times;</button>
+  `;
+  container.insertBefore(tagEl, input);
+}
+
+function removeTag(tag) {
+  const container = document.getElementById('tagsContainer');
+  const tags = container.querySelectorAll('.tag-item');
+  tags.forEach(tagEl => {
+    if (tagEl.textContent.trim().replace('×', '') === tag) {
+      tagEl.remove();
+    }
+  });
+}
+
+async function saveNote() {
+  const title = document.getElementById('noteTitle').value.trim();
+  const content = document.getElementById('noteContent').value.trim();
+  const category = document.getElementById('noteCategory').value.trim();
+  const tagsContainer = document.getElementById('tagsContainer');
+  const tags = Array.from(tagsContainer.querySelectorAll('.tag-item')).map(el =>
+    el.textContent.trim().replace('×', '')
+  );
+
+  if (!title) {
+    alert('Ο τίτλος είναι υποχρεωτικός');
+    return;
+  }
+
+  try {
+    const endpoint = editingNoteId ? '/notes/update' : '/notes/add';
+    const payload = { title, content, category, tags };
+    if (editingNoteId) {
+      payload.id = editingNoteId;
+    }
+
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      alert('Σφάλμα: ' + data.error);
+      return;
+    }
+
+    closeNoteEditor();
+    await loadNotes();
+  } catch (error) {
+    alert('Σφάλμα κατά την αποθήκευση: ' + error.message);
+  }
+}
+
+async function togglePinNote(noteId) {
+  try {
+    const res = await fetch(`${API_BASE}/notes/toggle-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: noteId })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      await loadNotes();
+    }
+  } catch (error) {
+    console.error('Failed to toggle pin:', error);
+  }
+}
+
+async function deleteNote(noteId) {
+  if (!confirm('Είσαι σίγουρος ότι θέλεις να διαγράψεις αυτή τη σημείωση;')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/notes/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: noteId })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      await loadNotes();
+    }
+  } catch (error) {
+    alert('Σφάλμα κατά τη διαγραφή: ' + error.message);
+  }
+}
+
+function editNote(noteId) {
+  openNoteEditor(noteId);
+}
+
+// Utilities
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleString('el-GR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ===========================
+// Add News to Notes Functionality
+// ===========================
+
+async function addNewsToNotes(newsItem) {
+  try {
+    // Show loading message
+    const loadingMsg = 'Δημιουργία σημείωσης με AI περίληψη...';
+    if (!confirm(loadingMsg + '\n\nΘέλετε να συνεχίσετε;')) {
+      return;
+    }
+
+    // Request AI summary from backend
+    const summaryRes = await fetch(`${API_BASE}/notes/generate-summary`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: newsItem.title,
+        url: newsItem.url,
+        summary: newsItem.summary || '',
+        topic: newsItem.topic || ''
+      })
+    });
+
+    const summaryData = await summaryRes.json();
+
+    // Create note content with AI summary
+    let content = `Πηγή: ${newsItem.url}\n\n`;
+
+    if (summaryData.ai_summary) {
+      content += `📝 AI Περίληψη:\n${summaryData.ai_summary}\n\n`;
+    }
+
+    if (newsItem.summary) {
+      content += `Αρχική Περίληψη:\n${newsItem.summary}`;
+    }
+
+    const title = newsItem.title;
+    const category = newsItem.topic || 'Νέα';
+    const tags = ['από-νέα', newsItem.topic].filter(Boolean);
+
+    // Save the note
+    const res = await fetch(`${API_BASE}/notes/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title,
+        content: content,
+        category: category,
+        tags: tags
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      alert('Σφάλμα: ' + data.error);
+    } else {
+      alert('Η σημείωση με AI περίληψη προστέθηκε επιτυχώς!');
+    }
+  } catch (error) {
+    alert('Σφάλμα κατά την προσθήκη σημείωσης: ' + error.message);
+  }
+}
+
+// ===========================
+// Conversation & Analytics Functions
+// ===========================
+
+let lastConversationId = null;
+
+async function loadAnalytics() {
+  const container = document.getElementById('analyticsContainer');
+  try {
+    const res = await fetch(`${API_BASE}/conversations/analytics`);
+    const data = await res.json();
+
+    if (data.error) {
+      container.innerHTML = `<p style="color: var(--text-gray);">Σφάλμα: ${data.error}</p>`;
+      return;
+    }
+
+    const { total_conversations, total_api_calls, total_tokens, total_cost_usd, avg_latency_ms, rating_distribution } = data;
+
+    container.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: bold; color: var(--primary);">${total_conversations || 0}</div>
+          <div style="color: var(--text-gray); margin-top: 4px;">Συζητήσεις</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: bold; color: var(--primary);">${total_api_calls || 0}</div>
+          <div style="color: var(--text-gray); margin-top: 4px;">AI Κλήσεις</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: bold; color: var(--primary);">${(total_tokens || 0).toLocaleString()}</div>
+          <div style="color: var(--text-gray); margin-top: 4px;">Tokens</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: bold; color: var(--primary);">$${(total_cost_usd || 0).toFixed(4)}</div>
+          <div style="color: var(--text-gray); margin-top: 4px;">Κόστος</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: bold; color: var(--primary);">${avg_latency_ms || 0}ms</div>
+          <div style="color: var(--text-gray); margin-top: 4px;">Μέση Καθυστέρηση</div>
+        </div>
+      </div>
+      ${rating_distribution && rating_distribution.length > 0 ? `
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+          <h4 style="margin-bottom: 12px;"><i class="fas fa-star"></i> Κατανομή Ratings</h4>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            ${rating_distribution.map(r => `
+              <div style="flex: 1; min-width: 80px; text-align: center;">
+                <div style="font-size: 24px; font-weight: bold;">${r.count}</div>
+                <div style="color: var(--text-gray);">${'⭐'.repeat(r.rating)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+    `;
+  } catch (error) {
+    container.innerHTML = `<p style="color: var(--text-gray);">Σφάλμα φόρτωσης: ${error.message}</p>`;
+  }
+}
+
+async function loadConversationHistory() {
+  const container = document.getElementById('conversationHistory');
+  try {
+    const res = await fetch(`${API_BASE}/conversations/history?limit=10`);
+    const data = await res.json();
+
+    if (data.error || !data.history || data.history.length === 0) {
+      container.innerHTML = `<p style="color: var(--text-gray);">Δεν υπάρχει ακόμα ιστορικό συζητήσεων.</p>`;
+      return;
+    }
+
+    let historyHTML = '<div style="max-height: 400px; overflow-y: auto;">';
+
+    // Group by pairs (user + assistant)
+    for (let i = 0; i < data.history.length; i++) {
+      const msg = data.history[i];
+
+      if (msg.role === 'user') {
+        const nextMsg = i + 1 < data.history.length ? data.history[i + 1] : null;
+
+        historyHTML += `
+          <div style="margin-bottom: 20px; padding: 12px; background: var(--bg); border-radius: 8px; border-left: 3px solid var(--primary);">
+            <div style="margin-bottom: 8px;">
+              <strong style="color: var(--primary);"><i class="fas fa-user"></i> Εσύ:</strong>
+              <p style="margin: 4px 0 0 0;">${msg.content}</p>
+            </div>
+            ${nextMsg && nextMsg.role === 'assistant' ? `
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                <strong style="color: var(--secondary);"><i class="fas fa-robot"></i> Agent:</strong>
+                <p style="margin: 4px 0 0 0;">${nextMsg.content}</p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        if (nextMsg && nextMsg.role === 'assistant') {
+          i++; // Skip the assistant message since we already displayed it
+        }
+      }
+    }
+
+    historyHTML += '</div>';
+    container.innerHTML = historyHTML;
+  } catch (error) {
+    container.innerHTML = `<p style="color: var(--text-gray);">Σφάλμα φόρτωσης: ${error.message}</p>`;
+  }
+}
+
+async function rateLastResponse(rating) {
+  if (!lastConversationId) {
+    alert('Δεν υπάρχει πρόσφατη συζήτηση για rating.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/conversations/rate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: lastConversationId,
+        rating: rating
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert(`Ευχαριστούμε! Αξιολόγηση: ${'⭐'.repeat(rating)}`);
+      loadAnalytics(); // Reload analytics
+      loadConversationHistory(); // Reload history
+    } else {
+      alert('Σφάλμα κατά την αποθήκευση του rating.');
+    }
+  } catch (error) {
+    alert('Σφάλμα: ' + error.message);
+  }
+}
+
+async function smartScrape() {
+  const resultDiv = document.getElementById('scrapeResult');
+  resultDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Smart Scraping σε εξέλιξη... (μπορεί να πάρει 1-2 λεπτά)</p></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/scrape/smart`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topics: null,  // null = όλα τα topics
+        max_per_topic: 5
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      const topicDetails = Object.entries(data.results_by_topic || {})
+        .map(([topic, count]) => `<li>${topic}: <strong>${count}</strong> άρθρα</li>`)
+        .join('');
+
+      resultDiv.innerHTML = `
+        <div style="padding: 12px; background: var(--success-bg); border-left: 3px solid var(--success); border-radius: 4px;">
+          <i class="fas fa-check-circle"></i> ${data.message}
+          <ul style="margin-top: 8px; padding-left: 20px;">
+            ${topicDetails}
+          </ul>
+        </div>
+      `;
+
+      // Reload news after scraping
+      if (currentView === 'news') {
+        await loadNews();
+      }
+    } else {
+      resultDiv.innerHTML = `
+        <div style="padding: 12px; background: var(--error-bg); border-left: 3px solid var(--error); border-radius: 4px;">
+          <i class="fas fa-exclamation-triangle"></i> ${data.message || 'Σφάλμα κατά το scraping'}
+        </div>
+      `;
+    }
+  } catch (error) {
+    resultDiv.innerHTML = `
+      <div style="padding: 12px; background: var(--error-bg); border-left: 3px solid var(--error); border-radius: 4px;">
+        <i class="fas fa-exclamation-triangle"></i> Σφάλμα: ${error.message}
+      </div>
+    `;
+  }
+}
+
+async function manualScrape() {
+  const resultDiv = document.getElementById('scrapeResult');
+  resultDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Scraping σε εξέλιξη...</p></div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/scrape/manual`, {
+      method: 'POST'
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      resultDiv.innerHTML = `
+        <div style="padding: 12px; background: var(--success-bg); border-left: 3px solid var(--success); border-radius: 4px;">
+          <i class="fas fa-check-circle"></i> ${data.message}
+        </div>
+      `;
+
+      // Reload news after scraping
+      if (currentView === 'news') {
+        await loadNews();
+      }
+    } else {
+      resultDiv.innerHTML = `
+        <div style="padding: 12px; background: var(--error-bg); border-left: 3px solid var(--error); border-radius: 4px;">
+          <i class="fas fa-exclamation-triangle"></i> ${data.message || 'Σφάλμα κατά το scraping'}
+        </div>
+      `;
+    }
+  } catch (error) {
+    resultDiv.innerHTML = `
+      <div style="padding: 12px; background: var(--error-bg); border-left: 3px solid var(--error); border-radius: 4px;">
+        <i class="fas fa-exclamation-triangle"></i> Σφάλμα: ${error.message}
+      </div>
+    `;
+  }
+}
+
+</script>
+
+</body>
+</html>

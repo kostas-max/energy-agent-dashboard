@@ -1,0 +1,9 @@
+
+body, html, #root { height: 100%; margin: 0; font-family: system-ui, Segoe UI, Roboto, Arial; }
+.app-container { display: flex; height: 100%; }
+.sidebar { width: 220px; background: #111827; color: white; padding: 12px; }
+.sidebar button { display: block; width: 100%; padding: 10px 12px; margin: 8px 0; background: #374151; color: white; border: none; border-radius: 8px; cursor: pointer; }
+.sidebar button.active { background: #10B981; }
+.content { flex: 1; padding: 16px; background: #F3F4F6; overflow-y: auto; }
+.card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+input, button { font-size: 16px; }
