@@ -24,6 +24,58 @@ def guess_topic(title: str) -> str:
                 return topic
     return ""
 
+def fetch_article_content(url: str, max_chars: int = 2000) -> str:
+    """
+    Fetch το πραγματικό περιεχόμενο του άρθρου από το URL
+
+    Args:
+        url: Το URL του άρθρου
+        max_chars: Μέγιστος αριθμός χαρακτήρων να επιστρέψει
+
+    Returns:
+        Το περιεχόμενο του άρθρου (καθαρισμένο κείμενο)
+    """
+    try:
+        r = requests.get(url, timeout=10, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # Αφαίρεση scripts, styles, navigation, footer, etc.
+        for element in soup(["script", "style", "nav", "footer", "header", "aside"]):
+            element.decompose()
+
+        # Προσπάθησε να βρεις το main content
+        # Πρώτα δοκίμασε κοινά selectors για article content
+        main_content = None
+        for selector in ['article', 'main', '.article-content', '.entry-content', '.post-content']:
+            main_content = soup.select_one(selector)
+            if main_content:
+                break
+
+        # Αν δεν βρήκε main content, πάρε όλο το body
+        if not main_content:
+            main_content = soup.find('body')
+
+        if not main_content:
+            return ""
+
+        # Πάρε το κείμενο
+        text = main_content.get_text()
+
+        # Καθαρισμός: αφαίρεση extra whitespace
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines
+                 for phrase in line.split("  "))
+        text = ' '.join(chunk for chunk in chunks if chunk)
+
+        # Κράτα τους πρώτους max_chars χαρακτήρες
+        return text[:max_chars]
+    except Exception as e:
+        print(f"[WARNING] Αδυναμία fetch content από {url}: {e}")
+        return ""
+
 def iter_sources():
     conn = sqlite3.connect(SOURCES_DB)
     cur = conn.cursor()
@@ -111,10 +163,17 @@ def run_scraping():
                 for it in items:
                     try:
                         title = it.get("title","")
+                        article_url = it.get("url","")
                         if not title:
                             continue
+
                         topic = guess_topic(title)
-                        summary = summarize_article(title, "") or ""  # optional
+
+                        # Fetch το πραγματικό περιεχόμενο του άρθρου για καλύτερη AI ανάλυση
+                        article_content = fetch_article_content(article_url) if article_url else ""
+
+                        # AI summarization με το πραγματικό content
+                        summary = summarize_article(title, article_content) or ""
                         item = {
                             "title": title,
                             "url": it.get("url",""),

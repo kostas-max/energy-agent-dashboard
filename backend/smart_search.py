@@ -278,11 +278,18 @@ def search_by_topics(topics: list = None, max_per_topic: int = 5) -> dict:
 
     return all_results
 
-def save_search_results_to_db(results: list, query: str = "", topic: str = "") -> int:
+def save_search_results_to_db(results: list, query: str = "", topic: str = "", fetch_content: bool = True) -> int:
     """
     Αποθηκεύει τα search results στη βάση δεδομένων.
+
+    Args:
+        results: List με search results
+        query: Το query που χρησιμοποιήθηκε
+        topic: Το topic (optional)
+        fetch_content: Αν True, κάνει fetch το πραγματικό content για καλύτερη AI ανάλυση
     """
     from db import save_news_if_new
+    from scraper import fetch_article_content
 
     saved_count = 0
 
@@ -295,8 +302,14 @@ def save_search_results_to_db(results: list, query: str = "", topic: str = "") -
             if not title or not url:
                 continue
 
-            # Δημιουργία AI summary (optional)
-            summary = summarize_article(title, snippet) or snippet
+            # Fetch το πραγματικό περιεχόμενο αν ζητηθεί
+            content = ""
+            if fetch_content:
+                content = fetch_article_content(url)
+                print(f"[INFO] Fetched {len(content)} chars από {url[:50]}...")
+
+            # Δημιουργία AI summary με το πραγματικό content (αν υπάρχει) ή το snippet
+            summary = summarize_article(title, content or snippet) or snippet
 
             item = {
                 'title': title,
