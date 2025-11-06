@@ -1,11 +1,18 @@
 
+import os
 import sqlite3
 from datetime import datetime
 import feedparser, requests
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 
 from db import save_news_if_new, SOURCES_DB
 from ai_summarizer import summarize_article
+
+load_dotenv()
+
+# Configuration: Fetch article content or use snippets only
+FETCH_ARTICLE_CONTENT = os.getenv("FETCH_ARTICLE_CONTENT", "true").lower() == "true"
 
 TOPIC_KEYWORDS = {
     "Φωτοβολταϊκά": ["φωτοβολταϊκά", "net metering", "net billing", "αυτοπαραγωγή"],
@@ -170,9 +177,13 @@ def run_scraping():
                         topic = guess_topic(title)
 
                         # Fetch το πραγματικό περιεχόμενο του άρθρου για καλύτερη AI ανάλυση
-                        article_content = fetch_article_content(article_url) if article_url else ""
+                        # (αν είναι enabled στο .env)
+                        article_content = ""
+                        if FETCH_ARTICLE_CONTENT and article_url:
+                            article_content = fetch_article_content(article_url)
+                            print(f"[INFO] Fetched {len(article_content)} chars από {article_url[:50]}...")
 
-                        # AI summarization με το πραγματικό content
+                        # AI summarization με το πραγματικό content (αν υπάρχει)
                         summary = summarize_article(title, article_content) or ""
                         item = {
                             "title": title,
